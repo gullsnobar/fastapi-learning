@@ -1,0 +1,11 @@
+[project]
+name = "justice-notes-api"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi[standard]>=0.162.0",
+]
+[[tool.uv.index]]
+name = "tsinghua"
+url = "https://pypi.tuna.tsinghua.edu.cn/simple"
+default = true
