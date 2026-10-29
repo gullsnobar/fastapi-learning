@@ -1,0 +1,52 @@
+[
+    {
+        "id": "P001",
+        "name": "John Doe",
+        "city": "New York",
+        "age": 34,
+        "gender": "Male",
+        "height": 1.75,
+        "weight": 82,
+        "bmi": 26.8
+    },
+    {
+        "id": "P002",
+        "name": "Jane Smith",
+        "city": "Los Angeles",
+        "age": 28,
+        "gender": "Female",
+        "height": 1.65,
+        "weight": 58,
+        "bmi": 21.3
+    },
+    {
+        "id": "P003",
+        "name": "Robert Johnson",
+        "city": "Chicago",
+        "age": 45,
+        "gender": "Male",
+        "height": 1.80,
+        "weight": 95,
+        "bmi": 29.3
+    },
+    {
+        "id": "P004",
+        "name": "Emily Davis",
+        "city": "Houston",
+        "age": 22,
+        "gender": "Female",
+        "height": 1.60,
+        "weight": 55,
+        "bmi": 21.5
+    },
+    {
+        "id": "P005",
+        "name": "Michael Wilson",
+        "city": "Phoenix",
+        "age": 50,
+        "gender": "Male",
+        "height": 1.78,
+        "weight": 85,
+        "bmi": 26.8
+    }
+]
