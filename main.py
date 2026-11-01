@@ -1,76 +1,56 @@
-from fastapi import FastAPI, HTTPException, Query, Path
-from typing import Optional
-import json
+from contextlib import asynccontextmanager
+from fastapi import FastAPI, HTTPException, Query, Path, Depends
+from typing import Optional, List
+from models import Patient
+from database import PatientDB
+
+# 1. Lifespan: Initialize DB on startup
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: Create the DB instance and attach it to the app state
+    app.state.db = PatientDB("patients.json")
+    yield
+    # Shutdown: Anything here happens when server stops (optional)
 
 app = FastAPI(
     title="Patient Management System API",
-    description="A fully functional API to manage your patient records.",
-    version="0.1.0"
+    lifespan=lifespan
 )
 
-def load_data():
-    with open("patients.json", "r") as f:
-        data = json.load(f)
-    return data
+# 2. Dependency: A function that returns the DB instance
+def get_db() -> PatientDB:
+    return app.state.db
 
 @app.get("/", tags=["General"])
 async def root():
     return {"message": "Patient Management System API"}
 
-@app.get("/about", tags=["General"])
-async def about():
-    return {"message": "A fully functional API to manage your patient records"}
-
-# UPDATED ENDPOINT: View with sorting and filtering
-@app.get(
-    "/view", 
-    summary="View all patients (with optional filtering & sorting)",
-    tags=["Patient Management"]
-)
+@app.get("/view", tags=["Patient Management"])
 async def view_all_patients(
-    city: Optional[str] = Query(None, description="Filter patients by city (e.g., New York)"),
-    sort_by: Optional[str] = Query(None, description="Sort by 'age', 'weight', or 'bmi'"),
-    order: str = Query("asc", description="Sort order: 'asc' or 'desc'")
+    db: PatientDB = Depends(get_db),  # <--- INJECTED HERE
+    city: Optional[str] = Query(None),
+    sort_by: Optional[str] = Query(None),
+    order: str = Query("asc")
 ):
-    data = load_data()
+    data = db.get_all()
 
     if city:
-        data = [p for p in data if p["city"].lower() == city.lower()]
-
-    if sort_by:
-        if sort_by in ["age", "weight", "bmi"]:
-            reverse_flag = True if order.lower() == "desc" else False
-            data = sorted(data, key=lambda x: x[sort_by], reverse=reverse_flag)
-        else:
-            raise HTTPException(
-                status_code=400, 
-                detail="Invalid sort_by field. Choose from 'age', 'weight', or 'bmi'."
-            )
+        data = [p for p in data if p["address"]["city"].lower() == city.lower()]
+    if sort_by and sort_by in ["age", "weight", "bmi"]:
+        reverse_flag = order.lower() == "desc"
+        data = sorted(data, key=lambda x: x[sort_by], reverse=reverse_flag)
 
     return data
 
-# UPDATED ENDPOINT: View single patient using Path parameter properly
-@app.get(
-    "/patient/{patient_id}", 
-    summary="Get a specific patient's details by ID",
-    tags=["Patient Management"]
-)
-async def view_patient(
-    patient_id: str = Path(
-        ..., 
-        description="The unique ID of the patient (e.g., P001)", 
-        example="P001"
-    )
-):
-    """
-    Retrieve the full profile of a single patient.
-    
-    - **patient_id**: Required path parameter. Must be an exact match (e.g., P001).
-    - Returns **404 Not Found** if the patient does not exist.
-    """
-    data = load_data()
-    for patient in data:
-        if patient["id"] == patient_id:
-            return patient
-            
-    raise HTTPException(status_code=404, detail=f"Patient with ID '{patient_id}' not found")
+@app.get("/patient/{patient_id}", tags=["Patient Management"])
+async def view_patient(patient_id: str, db: PatientDB = Depends(get_db)):
+    patient = db.get_by_id(patient_id)
+    if not patient:
+        raise HTTPException(404, f"Patient '{patient_id}' not found")
+    return patient
+
+@app.post("/create", status_code=201, tags=["Patient Management"])
+async def create_patient(patient: Patient, db: PatientDB = Depends(get_db)):
+    # Pydantic already validated the data
+    new_record = db.create(patient)
+    return {"message": "Patient created successfully", "patient": new_record}
