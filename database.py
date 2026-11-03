@@ -11,7 +11,6 @@ class PatientDB:
         self.load()
 
     def load(self):
-        """Load data from JSON file into memory."""
         try:
             with open(self.filepath, "r") as f:
                 self.data = json.load(f)
@@ -19,7 +18,6 @@ class PatientDB:
             self.data = []
 
     def save(self):
-        """Write in-memory data back to JSON file."""
         with open(self.filepath, "w") as f:
             json.dump(self.data, f, indent=4)
 
@@ -32,10 +30,15 @@ class PatientDB:
                 return patient
         return None
 
+    def email_exists(self, email: str) -> bool:
+        # Existing records may predate the email field. Treat those records as
+        # non-matches instead of failing every create request with a KeyError.
+        return any(p.get("email") == email for p in self.data)
+
     def create(self, patient: Patient) -> Dict[str, Any]:
         new_id = f"P{len(self.data) + 1:03d}"
         record = patient.model_dump(mode="json")
         record["id"] = new_id
         self.data.append(record)
-        self.save()  # Save immediately after change
+        self.save()
         return record
