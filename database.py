@@ -42,3 +42,11 @@ class PatientDB:
         self.data.append(record)
         self.save()
         return record
+
+    def delete(self, patient_id: str) -> Dict[str, Any] | None:
+        for index, patient in enumerate(self.data):
+            if patient["id"] == patient_id:
+                deleted = self.data.pop(index)
+                self.save()
+                return deleted
+        return None

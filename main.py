@@ -66,3 +66,17 @@ async def create_patient(
 
     new_record = db.create(patient)
     return {"message": "Patient created successfully", "patient": new_record}
+
+@app.delete("/delete/{patient_id}", tags=["Patient Management"])
+async def delete_patient(
+    patient_id: str = Path(..., description="Patient ID e.g., P001", examples=["P001"]),
+    db: PatientDB = Depends(get_db)
+):
+    deleted_patient = db.delete(patient_id)
+    if not deleted_patient:
+        raise HTTPException(404, f"Patient with ID '{patient_id}' not found")
+
+    return {
+        "message": "Patient deleted successfully",
+        "patient": deleted_patient,
+    }
